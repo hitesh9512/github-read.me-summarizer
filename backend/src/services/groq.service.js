@@ -63,7 +63,7 @@ const callGroq = async (messages, temperature = 0.2) => {
           Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
           'Content-Type': 'application/json',
         },
-        timeout: 30000,
+        timeout: 25000,
       }
     );
     return String(data?.choices?.[0]?.message?.content || '').trim();
@@ -112,14 +112,23 @@ Return ONLY a valid JSON object (no markdown, no code fences, no extra text) wit
     { role: 'user', content: prompt },
   ]);
 
-  const cleaned = text
+  // Strip markdown fences if present
+  const stripped = text
     .replace(/^```(?:json)?\s*/i, '')
     .replace(/\s*```$/i, '')
     .trim();
 
+  // Try direct parse first
   try {
-    return JSON.parse(cleaned);
-  } catch {
+    return JSON.parse(stripped);
+  } catch (_) {
+    // Fallback: extract first {...} JSON block from the response
+    const match = stripped.match(/\{[\s\S]*\}/);
+    if (match) {
+      try {
+        return JSON.parse(match[0]);
+      } catch (_) {}
+    }
     const err = new Error('Groq returned an unparseable response. Please try again.');
     err.status = 502;
     throw err;
