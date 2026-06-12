@@ -30,7 +30,13 @@ app.use((err, _req, res, _next) => {
   res.status(status).json({ error: message });
 });
 
-const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-});
+// Export for Vercel serverless
+module.exports = app;
+
+// Local dev server
+if (require.main === module) {
+  const PORT = process.env.PORT || 4000;
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+  });
+}
